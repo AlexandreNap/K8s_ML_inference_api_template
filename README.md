@@ -1,0 +1,1 @@
+# K8s_ML_inference_api_template
