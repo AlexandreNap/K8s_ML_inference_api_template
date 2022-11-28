@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-service
+spec:
+  selector:
+    app: inference-app
+  ports:
+    - protocol: 'TCP'
+      port: 8080
+      targetPort: 80
+  type: LoadBalancer
+
+---
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: inference-autoscale
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inference-deployment
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 80
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-deployment
+spec:
+  # replicas: 1
+  selector:
+    matchLabels:
+      app: inference-app
+  template:
+    metadata:
+      labels:
+        app: inference-app
+    spec:
+      containers:
+        - name: inference-pod
+          image: inference_api_image:5
+          imagePullPolicy: Never
+          ports:
+          - containerPort: 80
+          resources:
+            limits:
+              cpu: 700m
+            requests:
+              cpu: 500m
